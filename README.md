@@ -72,6 +72,8 @@ uvicorn app:app --host 127.0.0.1 --port 8001 --reload
 ```
 **Wait for**: `✅ Model loaded successfully!` (1-2 minutes first time)
 
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/d3532cfc-d6d2-4f40-a6fc-ec6454d20646" />
+
 ### **2. API Server Setup**
 ```bash
 cd api_server
@@ -79,6 +81,8 @@ go mod tidy                    # Download dependencies
 go run main.go                 # Start server
 ```
 **Ready when**: `✅ API server running at http://127.0.0.1:8000`
+
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/f0612295-9b3c-4fe2-ae43-c7492e5bc33f" />
 
 ### **3. Configuration Options**
 ```bash
@@ -91,19 +95,71 @@ go build -o api_server main.go     # Build binary
 ./api_server                       # Run production build
 ```
 
-##  API Testing
+## API Test Cases
 
-**Single Query:**
+Below are `curl` commands (for Git Bash) demonstrating the API's functionality, from direct model testing to the final API server's advanced error handling.
+
+---
+
+### Test 1: Directly query the Python /generate_batch endpoint with a single valid query.
+
 ```bash
-curl -X POST "http://127.0.0.1:8000/chat" -H "Content-Type: application/json" \
-  -d '{"chat_id":"1","user_prompt":"What is AI?"}'
+curl -X POST "[http://127.0.0.1:8001/generate_batch](http://127.0.0.1:8001/generate_batch)" \
+-H "Content-Type: application/json" \
+-d '{"queries":[{"chat_id":"1","system_prompt":"Helpful","user_prompt":"What is 2+2?"}]}'
 ```
 
-**Batch Queries:**
-```bash  
-curl -X POST "http://127.0.0.1:8000/chat/batched" -H "Content-Type: application/json" \
-  -d '{"queries":[{"chat_id":"1","user_prompt":"What is 2+2?"},{"chat_id":"2","user_prompt":"Define AI?"}]}'
+**Result:** The Python service at `:8001` correctly processes the single query and returns a `200 OK` with the model's response.
+
+---
+
+### Test 2: Test the Python /generate_batch endpoint's error handling for a partial batch (1 good, 1 bad).
+
+```bash
+curl -X POST "[http://127.0.0.1:8001/generate_batch](http://127.0.0.1:8001/generate_batch)" \
+-H "Content-Type: application/json" \
+-d '{"queries":[{"chat_id":"1","system_prompt":"Helpful","user_prompt":"What is 2+2?"},{"chat_id":"2","system_prompt":"Helpful","user_prompt":""}]}'
 ```
+
+**Result:** The Python service returns a `200 OK` with a `responses` array containing the successful answer for the first query and a structured error for the second (invalid) query.
+
+---
+
+### Test 3: Test the main API server's /chat/batched endpoint for partial success (1 good, 1 bad prompt).
+
+```bash
+curl -X POST "[http://127.0.0.1:8000/chat/batched](http://127.0.0.1:8000/chat/batched)" \
+-H "Content-Type: application/json" \
+-d '{"queries":[{"chat_id":"1","system_prompt":"Helpful","user_prompt":"What is 1+1?"},{"chat_id":"2","system_prompt":"Helpful","user_prompt":""}]}'
+```
+
+**Result:** The main API server at `:8000` returns a `200 OK` with a custom message (`"partial_success": true`), showing the successful response for `chat_id: "1"` and the specific error for `chat_id: "2"`.
+
+---
+
+### Test 4: Test the main API server's /chat/batched endpoint for a fully successful batch.
+
+```bash
+curl -X POST "[http://127.0.0.1:8000/chat/batched](http://127.0.0.1:8000/chat/batched)" \
+-H "Content-Type: application/json" \
+-d '{"queries":[{"chat_id":"1","system_prompt":"Helpful","user_prompt":"What is 5+5?"},{"chat_id":"2","system_prompt":"Helpful","user_prompt":"What is 3+3?"}]}'
+```
+
+**Result:** The API server successfully processes both valid queries and returns a `200 OK` with a `responses` array containing both model-generated answers.
+
+---
+
+### Test 5: Test the main API server with a complex batch (2 good, 2 bad queries) to show advanced error reporting.
+
+```bash
+curl -X POST "[http://127.0.0.1:8000/chat/batched](http://127.0.0.1:8000/chat/batched)" \
+-H "Content-Type: application/json" \
+-d '{"queries":[{"chat_id":"1","system_prompt":"Helpful","user_prompt":"What is 2*3?"},{"chat_id":"","system_prompt":"Helpful","user_prompt":"What is 4+4?"},{"chat_id":"3","system_prompt":"Helpful","user_prompt":""},{"chat_id":"4","system_prompt":"Helpful","user_prompt":"What is 6/2?"}]}'
+```
+
+**Result:** The API server demonstrates its robust error handling by returning `partial_success: true`, correctly providing answers for the two valid queries while reporting specific errors for the two invalid ones.
+
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/e44c0781-b87f-4c92-953c-1efc82d9f80f" />
 
 ## 🔧 Implementation Details
 
@@ -181,7 +237,7 @@ wg.Wait()
 
 ##  Assignment Verification
 
-### **Core Requirements (100% Complete)**
+### **Core Requirements (Completed)**
 - ✅ SmolLM2-135M-Instruct integration via transformers
 - ✅ `/chat` and `/chat/batched` endpoints with proper JSON
 - ✅ **TRUE concurrent processing** - Go goroutines with `sync.WaitGroup`  
@@ -192,9 +248,9 @@ wg.Wait()
 - ✅ **Dynamic Batching** - Single model call for multiple queries
 - ✅ **Partial Failure Handling** - Process valid queries despite invalid ones
 
-### ** Enterprise Features**
+### ** Enterprise Features covered**
 - ✅ Configurable worker pool (`HOSTING_MAX_CONCURRENCY`)
 - ✅ Intelligent fallback when batch endpoint unavailable
 - ✅ logging and error handling
 
-**Result**: implementation with clean architecture, performance optimization, and robust error handling.
+**Result**: Implementated with clean architecture, performance optimization, and robust error handling.
