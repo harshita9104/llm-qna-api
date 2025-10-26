@@ -1,0 +1,11 @@
+# Python cache (exists in project)
+__pycache__/
+
+# Virtual environment (exists in project)
+hosting/.venv/
+
+# Go binaries
+*.exe
+
+# Environment files
+.env
