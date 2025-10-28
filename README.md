@@ -1,4 +1,4 @@
-# SmolLM2 Q&A API Server
+# SmolLM2 Concurrent LLM Microservice (Go & Python)
 
 API for SmolLM2-135M-Instruct with **dynamic batching** and **concurrent processing**.
 
